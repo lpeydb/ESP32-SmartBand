@@ -1,0 +1,55 @@
+#include <Arduino.h>
+#include <BluetoothSerial.h>
+BluetoothSerial SerialBT;
+
+void setup()
+{
+    Serial.begin(115200);
+    SerialBT.begin("GoldFish_ESP32"); // 如果没有参数传入则默认是蓝牙名称是: "ESP32"
+    // SerialBT.setPin("1234");   // 蓝牙连接的配对码
+    Serial.printf("BT initial ok and ready to pair. \r\n");
+}
+String message = "";
+char incomingChar;
+int TimeRequire = 1;
+int hour;int minute;int seconed;
+void loop()
+{
+    if (SerialBT.available())
+    {
+        char incomingChar = SerialBT.read();
+        if (incomingChar == 'h')
+        {
+            hour = atoi(message.c_str());
+            message = "";
+        }
+        else if (incomingChar == 'm')
+        {
+            minute = atoi(message.c_str());
+            message = "";
+        }
+        else if (incomingChar == 's')
+        {
+            seconed = atoi(message.c_str());
+            message = "";
+        }
+        else if (incomingChar != '\n')
+        {
+            message += String(incomingChar);
+        }
+        else
+        {
+            TimeRequire = hour*3600+minute*60+seconed; 
+            Serial.println(TimeRequire);
+            hour=0;
+            minute=0;
+            seconed=0;
+            TimeRequire=0;
+            message = "";
+        }
+        // Serial.write(incomingChar);
+    }
+    // Check received message and control output accordingly
+
+    delay(20);
+}
