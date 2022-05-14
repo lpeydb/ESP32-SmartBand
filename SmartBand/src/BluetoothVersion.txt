@@ -7,19 +7,11 @@
 #include "heartRate.h" //Heart rate calculating algorithm
 #include "ESP32Servo.h"
 #include "pic.h"
-#include "ArduinoJson.h"
-#include <WiFi.h>
-#include <HTTPClient.h>
-#include <NTPClient.h>
 MAX30105 particleSensor;
-
 int Tonepin = 4;
 int Ledpin = 23;
 int Intpin = 5;
-//声光报警用变数
 bool Max30102WorkRight = 0;
-//切换事件用变数
-int EventSwitch = 1;
 //計算心跳用變數
 const byte RATE_SIZE = 10; //多少平均數量
 byte rates[RATE_SIZE];	   //心跳陣列
@@ -27,11 +19,13 @@ byte rateSpot = 0;
 long lastBeat = 0; // Time at which the last beat occurred
 float beatsPerMinute;
 int beatAvg;
+
 //計算血氧用變數
 double avered = 0;
 double aveir = 0;
 double sumirrms = 0;
 double sumredrms = 0;
+
 double SpO2 = 0;
 double ESpO2 = 90.0; //初始值
 double FSpO2 = 0.7;	 // filter factor for estimated SpO2
@@ -40,9 +34,11 @@ int i = 0;
 int Num = 30;			  //取樣100次才計算1次
 #define FINGER_ON 7000	  //紅外線最小量（判斷手指有沒有上）
 #define MINIMUM_SPO2 90.0 //血氧最小量
+
 //定时器中断用变数
 int TimeCounter = 0;
 hw_timer_t *timer = NULL;
+
 //蓝牙用变数
 BluetoothSerial SerialBT;
 String message = "";
@@ -51,214 +47,6 @@ int TimeRequire = 1;
 int hour;
 int minute;
 int seconed;
-// oled初始化
-#define SCREEN_WIDTH 128												  // OLED寬度
-#define SCREEN_HEIGHT 64												  // OLED高度
-#define OLED_RESET -1													  // Reset pin
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET); // Declaring the display name (display)
-//	WiFi的初始化和连接
-WiFiUDP ntpUDP;
-NTPClient timeClient(ntpUDP);
-// WiFi用变数
-String UID = "477768935";
-String followerUrl = "http://api.bilibili.com/x/relation/stat?vmid=" + UID; // 粉丝数
-long follower = 0;															// 粉丝数
-DynamicJsonDocument doc(1024);
-String weatherUrl = "https://api.seniverse.com/v3/weather/now.json?key=S92lT1RxhOcp7k2v_&location=huizhou&language=en&unit=c";
-String weather;
-String location;
-String temp;
-int currentHour;
-int currentMinute;
-int weekDay;
-int monthDay;
-int currentMonth;
-//连接WiFi
-void WiFi_Connect()
-{
-	WiFi.begin("Mytest", "123456789");
-	while (WiFi.status() != WL_CONNECTED)
-	{ //这里是阻塞程序，直到连接成功
-		delay(300);
-		Serial.print(".");
-		display.clearDisplay();
-		display.setTextSize(2);
-		display.setTextColor(WHITE);
-		display.setCursor(0, 0);
-		display.print("WiFiConnet Failure");
-		display.display();
-	}
-}
-//获取天气
-void getWeather()
-{
-	HTTPClient http;
-	http.begin(weatherUrl); // HTTP begin
-	int httpCode = http.GET();
-	if (httpCode > 0)
-	{
-		// httpCode will be negative on error
-		Serial.printf("HTTP Get Code: %d\r\n", httpCode);
-
-		if (httpCode == HTTP_CODE_OK) // 收到正确的内容
-		{
-			String resBuff = http.getString();
-
-			//	输出示例：{"mid":123456789,"following":226,"whisper":0,"black":0,"follower":867}}
-			Serial.println(resBuff);
-
-			//	使用ArduinoJson_6.x版本，具体请移步：https://github.com/bblanchon/ArduinoJson
-			deserializeJson(doc, resBuff); //开始使用Json解析
-			JsonObject results_0 = doc["results"][0];
-
-			JsonObject results_0_location = results_0["location"];
-			const char *results_0_location_name = results_0_location["name"]; // "Huizhou"
-
-			JsonObject results_0_now = results_0["now"];
-			const char *results_0_now_text = results_0_now["text"];				  // "Heavy rain"
-			const char *results_0_now_temperature = results_0_now["temperature"]; // "25"
-			location = results_0_location_name;
-			weather = results_0_now_text;
-			temp = results_0_now_temperature;
-			Serial.println(temp);
-			Serial.println(weather);
-			Serial.println(location);
-		}
-	}
-	else
-	{
-		Serial.printf("HTTP Get Error: %s\n", http.errorToString(httpCode).c_str());
-	}
-
-	http.end();
-}
-//	获取粉丝数
-void getBiliBiliFollower()
-{
-	HTTPClient http;
-	http.begin(followerUrl); // HTTP begin
-	int httpCode = http.GET();
-
-	if (httpCode > 0)
-	{
-		// httpCode will be negative on error
-		Serial.printf("HTTP Get Code: %d\r\n", httpCode);
-
-		if (httpCode == HTTP_CODE_OK) // 收到正确的内容
-		{
-			String resBuff = http.getString();
-
-			//	输出示例：{"mid":123456789,"following":226,"whisper":0,"black":0,"follower":867}}
-			Serial.println(resBuff);
-
-			//	使用ArduinoJson_6.x版本，具体请移步：https://github.com/bblanchon/ArduinoJson
-			deserializeJson(doc, resBuff); //开始使用Json解析
-			follower = doc["data"]["follower"];
-			Serial.printf("Follers: %ld \r\n", follower);
-		}
-	}
-	else
-	{
-		Serial.printf("HTTP Get Error: %s\n", http.errorToString(httpCode).c_str());
-	}
-
-	http.end();
-}
-//显示粉丝数
-void showBilibiliFollower()
-{
-	display.clearDisplay();
-	display.drawBitmap(0, 0, bilibili, 64, 64, 1);
-	display.setTextSize(2);
-	display.setTextColor(WHITE);
-	display.setCursor(84, 24);
-	display.print(follower);
-	display.display();
-}
-//获取时间
-void getTime()
-{
-	timeClient.update();
-	Serial.println(timeClient.getFormattedTime());
-	unsigned long epochTime = timeClient.getEpochTime();
-	Serial.print("Epoch Time: ");
-	Serial.println(epochTime);
-	//打印时间
-	currentHour = timeClient.getHours();
-	Serial.print("Hour: ");
-	Serial.println(currentHour);
-	currentMinute = timeClient.getMinutes();
-	Serial.print("Minutes: ");
-	Serial.println(currentMinute);
-	weekDay = timeClient.getDay();
-	Serial.print("Week Day: ");
-	Serial.println(weekDay);
-	//将epochTime换算成年月日
-	struct tm *ptm = gmtime((time_t *)&epochTime);
-	monthDay = ptm->tm_mday;
-	Serial.print("Month day: ");
-	Serial.println(monthDay);
-	currentMonth = ptm->tm_mon + 1;
-	Serial.print("Month: ");
-	Serial.println(currentMonth);
-	delay(100);
-}
-//显示时间天气
-void showTimeWeather()
-{
-	display.clearDisplay();
-	display.setTextSize(4);
-	display.setTextColor(WHITE);
-	display.setCursor(0, 0);
-	if (currentHour<=10)
-	{
-		display.print("0");
-	}
-	display.print(currentHour);
-	display.print(":");
-	if (currentMinute<=10)
-	{
-		display.print("0");
-	}
-	display.println(currentMinute);
-	display.setTextSize(1);
-	switch (weekDay)
-	{
-	case 1:
-		display.print("Monday");
-		break;
-	case 2:
-		display.print("Tuesday");
-		break;
-	case 3:
-		display.print("Wednesday");
-		break;
-	case 4:
-		display.print("Thursday");
-		break;
-	case 5:
-		display.print("Friday");
-		break;
-	case 6:
-		display.print("Saturday");
-		break;
-	case 7:
-		display.print("Sunday");
-		break;
-	default:
-		display.print("Unknown");
-		break;
-	}
-	display.print(" ");
-	display.print(currentMonth);
-	display.print("/");
-	display.println(monthDay);
-	display.println(location);
-	display.println(weather);
-	display.print("temperature:");
-	display.print(temp);
-	display.display();
-}
 //从蓝牙读取数据
 void ReadFromBlueTooth()
 {
@@ -293,6 +81,11 @@ void ReadFromBlueTooth()
 		message = "";
 	}
 }
+// oled初始化
+#define SCREEN_WIDTH 128												  // OLED寬度
+#define SCREEN_HEIGHT 64												  // OLED高度
+#define OLED_RESET -1													  // Reset pin
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET); // Declaring the display name (display)
 
 //定时器中断事件
 void IRAM_ATTR TimerEvent()
@@ -303,17 +96,21 @@ void IRAM_ATTR TimerEvent()
 //按键中断事件
 void PinIntEvent()
 {
-	Serial.println("PinInt Event.\r\n");
-	if (EventSwitch < 3)
-	{
-		EventSwitch++;
-	}
-	else
-	{
-		EventSwitch = 1;
-	}
-	Serial.print("EventSwitch=");
-	Serial.println(EventSwitch);
+	Serial.printf("PinInt Event.\r\n");
+	Max30102WorkRight = 0;
+	//清除心跳數據
+	for (byte rx = 0; rx < RATE_SIZE; rx++)
+		rates[rx] = 0;
+	beatAvg = 0;
+	rateSpot = 0;
+	lastBeat = 0;
+	//清除血氧數據
+	avered = 0;
+	aveir = 0;
+	sumirrms = 0;
+	sumredrms = 0;
+	SpO2 = 0;
+	ESpO2 = 90.0;
 }
 //喝水吃药提示
 void RemainDrinkEat()
@@ -345,23 +142,9 @@ void LedToneAlarm()
 		delay(256);
 	}
 	noTone(Tonepin); //停止聲音
-	Max30102WorkRight = 0;
-	//清除心跳數據
-	for (byte rx = 0; rx < RATE_SIZE; rx++)
-		rates[rx] = 0;
-	beatAvg = 0;
-	rateSpot = 0;
-	lastBeat = 0;
-	//清除血氧數據
-	avered = 0;
-	aveir = 0;
-	sumirrms = 0;
-	sumredrms = 0;
-	SpO2 = 0;
-	ESpO2 = 90.0;
 }
 //测心率血氧函数
-void Max30102Measure()
+void measure()
 {
 	long irValue = particleSensor.getIR(); // Reading the IR value it will permit us to know if there's a finger on the sensor or not
 	//是否有放手指
@@ -491,29 +274,19 @@ void Max30102Measure()
 }
 void setup()
 {
-	display.begin(SSD1306_SWITCHCAPVCC, 0x3C); // Start the OLED display
-	display.clearDisplay();
-	display.display();
-	Serial.begin(115200);
-	delay(500);
-
-	Serial.print("WiFiConnecting.. ");
-	WiFi_Connect();
-	timeClient.begin();
-	timeClient.setTimeOffset(28800); // + 1区 偏移3600， +8区 ：3600×8 = 28800
-	Serial.println("WiFi connected");
-	Serial.println("IP address: ");
-	Serial.println(WiFi.localIP());
-
 	pinMode(Ledpin, OUTPUT);
 	//按键中断
-	pinMode(Intpin, INPUT);
+	pinMode(Intpin, INPUT_PULLUP);
 	attachInterrupt(Intpin, PinIntEvent, FALLING);
-
+	Serial.begin(115200);
 	SerialBT.begin("GoldFish_ESP32"); // 如果没有参数传入则默认是蓝牙名称是: "ESP32"
 	SerialBT.setPin("1234");		  // 蓝牙连接的配对码
 	Serial.printf("BT initial ok and ready to pair. \r\n");
 
+	display.begin(SSD1306_SWITCHCAPVCC, 0x3C); // Start the OLED display
+	display.clearDisplay();
+	display.display();
+	delay(2000);
 	if (!particleSensor.begin(Wire, I2C_SPEED_FAST)) // Use default I2C port, 400kHz speed
 	{
 		Serial.println("找不到MAX30102");
@@ -561,30 +334,15 @@ void setup()
 }
 
 void loop()
-{	
-	switch (EventSwitch)
-	{
-	case 1:
-		Max30102Measure();
-		break;
-	case 2:
-		getTime();
-		getWeather();
-		showTimeWeather();
-		break;
-	case 3:
-		getBiliBiliFollower();
-		showBilibiliFollower();
-		break;
-	default:
-		Max30102Measure();
-		break;
-	}
+{
+	measure();
 	if (SerialBT.available())
 	{
 		ReadFromBlueTooth();
 	}
+
 	delay(1);
+
 	//喝水吃药提示
 	if (TimeCounter >= TimeRequire)
 	{
