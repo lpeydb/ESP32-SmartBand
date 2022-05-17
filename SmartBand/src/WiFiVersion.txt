@@ -5,11 +5,11 @@
 #include "MAX30105.h"  //MAX3010x library
 #include "heartRate.h" //Heart rate calculating algorithm
 #include "ESP32Servo.h"
-#include "pic.h"
 #include "ArduinoJson.h"
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <NTPClient.h>
+#include "pic.h"
 MAX30105 particleSensor;
 //定义引脚
 int Tonepin = 4;
@@ -53,6 +53,11 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET); // Dec
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP);
 // WiFi用变数
+String weatherUrl = "https://api.seniverse.com/v3/weather/now.json?key=S92lT1RxhOcp7k2v_&location=huizhou&language=en&unit=c";
+String weather;
+String location;
+String temperature;
+int icon;
 String UID = "477768935";
 String followerUrl = "http://api.bilibili.com/x/relation/stat?vmid=" + UID; // 粉丝数
 long follower = 0;															// 粉丝数
@@ -125,32 +130,142 @@ void showBilibiliFollower()
 void getTime()
 {
 	timeClient.update();
-	Serial.println(timeClient.getFormattedTime());
+	// Serial.println(timeClient.getFormattedTime());
 	unsigned long epochTime = timeClient.getEpochTime();
-	Serial.print("Epoch Time: ");
-	Serial.println(epochTime);
+	// Serial.print("Epoch Time: ");
+	// Serial.println(epochTime);
 	//打印时间
 	currentHour = timeClient.getHours();
-	Serial.print("Hour: ");
-	Serial.println(currentHour);
+	// Serial.print("Hour: ");
+	// Serial.println(currentHour);
 	currentMinute = timeClient.getMinutes();
-	Serial.print("Minutes: ");
-	Serial.println(currentMinute);
+	// Serial.print("Minutes: ");
+	// Serial.println(currentMinute);
 	weekDay = timeClient.getDay();
-	Serial.print("Week Day: ");
-	Serial.println(weekDay);
+	// Serial.print("Week Day: ");
+	// Serial.println(weekDay);
 	//将epochTime换算成年月日
 	struct tm *ptm = gmtime((time_t *)&epochTime);
 	monthDay = ptm->tm_mday;
-	Serial.print("Month day: ");
-	Serial.println(monthDay);
+	// Serial.print("Month day: ");
+	// Serial.println(monthDay);
 	currentMonth = ptm->tm_mon + 1;
-	Serial.print("Month: ");
-	Serial.println(currentMonth);
-	delay(100);
+	// Serial.print("Month: ");
+	// Serial.println(currentMonth);
+	delay(20);
 }
-//显示时间
-void showTime()
+// 选择天气图标
+void selectIcon(int i)
+{
+	switch (i)
+	{
+	case 0: // 白天晴天
+	case 2:
+		icon = 1;
+		break;
+
+	case 1: // 晚上晴天
+	case 3:
+		icon = 2;
+		break;
+
+	case 4: // 多云
+	case 5:
+	case 6:
+	case 7:
+	case 8:
+	case 9:
+		icon = 3;
+		break;
+
+	case 10: // 阵雨(太阳雨)
+		icon = 4;
+		break;
+
+	case 11: // 雷阵雨
+	case 12:
+		icon = 5;
+		break;
+
+	case 13: // 小雨
+		icon = 6;
+		break;
+
+	case 14: // 大到暴雨
+	case 15:
+	case 16:
+	case 17:
+	case 18:
+		icon = 7;
+		break;
+
+	case 20: // 雪
+	case 21:
+	case 22:
+	case 23:
+	case 24:
+	case 25:
+		icon = 8;
+		break;
+
+	case 31: // 霾
+		icon = 9;
+		break;
+
+	case 32: // 风
+	case 33:
+		icon = 10;
+		break;
+
+	default:
+		icon = 11;
+		break;
+	}
+}
+//获取天气
+void getWeather()
+{
+	HTTPClient http;
+	http.begin(weatherUrl); // HTTP begin
+	int httpCode = http.GET();
+
+	if (httpCode > 0)
+	{
+		// httpCode will be negative on error
+		// Serial.printf("HTTP Get Code: %d\r\n", httpCode);
+
+		if (httpCode == HTTP_CODE_OK) // 收到正确的内容
+		{
+			String resBuff = http.getString();
+			deserializeJson(doc, resBuff); //开始使用Json解析
+			JsonObject results_0 = doc["results"][0];
+
+			JsonObject results_0_location = results_0["location"];
+			const char *results_0_location_name = results_0_location["name"]; // "Huizhou"
+
+			JsonObject results_0_now = results_0["now"];
+			const char *results_0_now_text = results_0_now["text"]; // "Heavy rain"
+			int weathercode = results_0_now["code"];
+			const char *results_0_now_temperature = results_0_now["temperature"]; // "25"
+			//int weathercode = results_0_now_code;
+			location = results_0_location_name;
+			weather = results_0_now_text;
+			selectIcon(weathercode);
+			temperature = results_0_now_temperature;
+			// Serial.println(temperature);
+			// Serial.println(weather);
+			// Serial.println(location);
+		}
+	}
+	else
+	{
+		Serial.printf("HTTP Get Error: %s\n", http.errorToString(httpCode).c_str());
+	}
+	http.end();
+	delay(20);
+}
+//显示时间和天气
+void showTimeWeather()
 {
 	display.clearDisplay();
 	display.setTextSize(4);
@@ -161,56 +276,91 @@ void showTime()
 		display.print("0");
 	}
 	display.print(currentHour);
-	switch (i)
-	{
-	case 1:
-		display.print(":");
-		i++;
-		break;
-
-	default:
-		display.print(" ");
-		i = 1;
-		break;
-	}
+	display.print(":");
 	if (currentMinute <= 10)
 	{
 		display.print("0");
 	}
 	display.println(currentMinute);
-	display.setTextSize(2);
+	display.setTextSize(1);
 	switch (weekDay)
 	{
 	case 1:
-		display.println("Monday");
+		display.print("Monday");
 		break;
 	case 2:
-		display.println("Tuesday");
+		display.print("Tuesday");
 		break;
 	case 3:
-		display.println("Wednesday");
+		display.print("Wednesday");
 		break;
 	case 4:
-		display.println("Thursday");
+		display.print("Thursday");
 		break;
 	case 5:
-		display.println("Friday");
+		display.print("Friday");
 		break;
 	case 6:
-		display.println("Saturday");
+		display.print("Saturday");
 		break;
 	case 7:
-		display.println("Sunday");
+		display.print("Sunday");
 		break;
 	default:
-		display.println("Unknown");
+		display.print("Unknown");
 		break;
 	}
+	display.print(" ");
 	display.print(currentMonth);
 	display.print("/");
 	display.println(monthDay);
+	display.println(location);
+	display.println(weather);
+	display.print("temperature:");
+	display.print(temperature);
 	display.display();
-	delay(500);
+	delay(1);
+	Serial.println("showTimeWeather End");
+}
+//显示天气GIF
+void showicon()
+{
+	switch (icon)
+	{
+	case 1:
+		showSun();
+		break;
+	case 2:
+		showDayNight();
+		break;
+	case 3:
+		showCloudy();
+		break;
+	case 4:
+		showRainCloudy();
+		break;
+	case 5:
+		showtStormy();
+		break;
+	case 6:
+		showRainy();
+		break;
+	case 7:
+		showTorrentialRain();
+		break;
+	case 8:
+		showLightSnowy();
+		break;
+	case 9:
+		showHaze();
+		break;
+	case 10:
+		showWindy();
+		break;
+
+	default:
+		break;
+	}
 }
 //定时器中断事件
 void IRAM_ATTR TimerEvent()
@@ -452,7 +602,7 @@ void setup()
 	display.clearDisplay();
 	display.display();
 	Serial.begin(115200);
-	delay(500);
+	delay(1000);
 
 	Serial.print("WiFiConnecting.. ");
 	WiFi_Connect();
@@ -490,29 +640,10 @@ void setup()
 	particleSensor.setPulseAmplitudeGreen(0);  // Turn off Green LED
 
 	Serial.begin(115200);
-	//	函数名称：timerBegin()
-	//	函数功能：Timer初始化，分别有三个参数
-	//	函数输入：1. 定时器编号（0到3，对应全部4个硬件定时器）
-	//			 2. 预分频器数值（ESP32计数器基频为80M，80分频单位是微秒）
-	//			 3. 计数器向上（true）或向下（false）计数的标志
-	//	函数返回：一个指向 hw_timer_t 结构类型的指针
+
 	timer = timerBegin(0, 80, true);
-
-	//	函数名称：timerAttachInterrupt()
-	//	函数功能：绑定定时器的中断处理函数，分别有三个参数
-	//	函数输入：1. 指向已初始化定时器的指针（本例子：timer）
-	//			 2. 中断服务函数的函数指针
-	//			 3. 表示中断触发类型是边沿（true）还是电平（false）的标志
-	//	函数返回：无
 	timerAttachInterrupt(timer, &TimerEvent, true);
-
-	//	函数名称：timerAlarmWrite()
-	//	函数功能：指定触发定时器中断的计数器值，分别有三个参数
-	//	函数输入：1. 指向已初始化定时器的指针（本例子：timer）
-	//			 2. 第二个参数是触发中断的计数器值（1000000 us -> 1s）
-	//			 3. 定时器在产生中断时是否重新加载的标志
-	//	函数返回：无
-	timerAlarmWrite(timer, 1000000, true);
+	timerAlarmWrite(timer, 1000000, true); // 1s中断一次
 }
 
 void loop()
@@ -524,7 +655,10 @@ void loop()
 		break;
 	case 2:
 		getTime();
-		showTime();
+		getWeather();
+		showTimeWeather();
+		delay(1000);
+		showicon();
 		break;
 	case 3:
 		getBiliBiliFollowers();
@@ -536,7 +670,7 @@ void loop()
 	case 5:
 		if (TimeRequire != 1)
 		{
-			timerAlarmEnable(timer);  //	使能定时器
+			timerAlarmEnable(timer); //	使能定时器
 		}
 		showTimedifference();
 		break;

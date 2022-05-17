@@ -12,17 +12,17 @@
 #include "pic.h"
 MAX30105 particleSensor;
 //定义引脚
-int Tonepin = 4;
-int Ledpin = 23;
-int Buttonpin1 = 5;
-int Buttonpin2 = 19;
+#define Tonepin 4
+#define Ledpin 23
+#define Buttonpin1 5
+#define Buttonpin2 19
 //声光报警用变数
 bool Max30102WorkRight = 0;
 //切换事件用变数
 int EventSwitch = 1;
 //計算心跳用變數
-const byte RATE_SIZE = 10; //多少平均數量
-byte rates[RATE_SIZE];	   //心跳陣列
+const byte RATE_SIZE = 10; //多少平均數量     10
+byte rates[RATE_SIZE];	  //心跳陣列
 byte rateSpot = 0;
 long lastBeat = 0; // Time at which the last beat occurred
 float beatsPerMinute;
@@ -43,7 +43,9 @@ int Num = 30;			  //取樣100次才計算1次
 //定时器中断用变数
 int TimeCounter = 0;
 int TimeRequire = 1;
+int Time2Counter = 0;
 hw_timer_t *timer = NULL;
+hw_timer_t *timer2 = NULL;
 // oled初始化
 #define SCREEN_WIDTH 128												  // OLED寬度
 #define SCREEN_HEIGHT 64												  // OLED高度
@@ -73,14 +75,8 @@ void WiFi_Connect()
 	WiFi.begin("Mytest", "123456789");
 	while (WiFi.status() != WL_CONNECTED)
 	{ //这里是阻塞程序，直到连接成功
-		delay(300);
-		Serial.print(".");
-		display.clearDisplay();
-		display.setTextSize(2);
-		display.setTextColor(WHITE);
-		display.setCursor(0, 0);
-		display.print("WiFiConnet Failure");
-		display.display();
+		showWifiConnet();
+		// Serial.print(".");
 	}
 }
 //	获取粉丝数
@@ -93,19 +89,18 @@ void getBiliBiliFollowers()
 	if (httpCode > 0)
 	{
 		// httpCode will be negative on error
-		Serial.printf("HTTP Get Code: %d\r\n", httpCode);
+		// Serial.printf("HTTP Get Code: %d\r\n", httpCode);
 
 		if (httpCode == HTTP_CODE_OK) // 收到正确的内容
 		{
 			String resBuff = http.getString();
 
 			//	输出示例：{"mid":123456789,"following":226,"whisper":0,"black":0,"follower":867}}
-			Serial.println(resBuff);
-
+			// Serial.println(resBuff);
 			//	使用ArduinoJson_6.x版本，具体请移步：https://github.com/bblanchon/ArduinoJson
 			deserializeJson(doc, resBuff); //开始使用Json解析
 			follower = doc["data"]["follower"];
-			Serial.printf("Follers: %ld \r\n", follower);
+			// Serial.printf("Follers: %ld \r\n", follower);
 		}
 	}
 	else
@@ -247,7 +242,7 @@ void getWeather()
 			const char *results_0_now_text = results_0_now["text"]; // "Heavy rain"
 			int weathercode = results_0_now["code"];
 			const char *results_0_now_temperature = results_0_now["temperature"]; // "25"
-			//int weathercode = results_0_now_code;
+			// int weathercode = results_0_now_code;
 			location = results_0_location_name;
 			weather = results_0_now_text;
 			selectIcon(weathercode);
@@ -271,15 +266,15 @@ void showTimeWeather()
 	display.setTextSize(4);
 	display.setTextColor(WHITE);
 	display.setCursor(0, 0);
-	if (currentHour <= 10)
+	if (currentHour < 10)
 	{
-		display.print("0");
+		display.print("0"); //给小时数补零
 	}
 	display.print(currentHour);
 	display.print(":");
-	if (currentMinute <= 10)
+	if (currentMinute < 10)
 	{
-		display.print("0");
+		display.print("0"); //给分钟数补零
 	}
 	display.println(currentMinute);
 	display.setTextSize(1);
@@ -303,7 +298,7 @@ void showTimeWeather()
 	case 6:
 		display.print("Saturday");
 		break;
-	case 7:
+	case 0:
 		display.print("Sunday");
 		break;
 	default:
@@ -319,8 +314,8 @@ void showTimeWeather()
 	display.print("temperature:");
 	display.print(temperature);
 	display.display();
-	delay(1);
-	Serial.println("showTimeWeather End");
+	delay(1000);
+	// Serial.println("showTimeWeather End");
 }
 //显示天气GIF
 void showicon()
@@ -363,13 +358,17 @@ void showicon()
 	}
 }
 //定时器中断事件
-void IRAM_ATTR TimerEvent()
+void IRAM_ATTR Timer1Event()
 {
 	TimeCounter++;
-	Serial.print("TimeCounter:");
-	Serial.println(TimeCounter);
-	Serial.print("TimeRequire:");
-	Serial.println(TimeRequire);
+	// Serial.print("TimeCounter:");
+	// Serial.println(TimeCounter);
+	//  Serial.print("TimeRequire:");
+	//  Serial.println(TimeRequire);
+}
+void IRAM_ATTR Timer2Event()
+{
+	Time2Counter++;
 }
 //按键1中断事件
 void Button1IntEvent()
@@ -397,17 +396,27 @@ void Button2IntEvent()
 void showRequireTime()
 {
 	display.clearDisplay();
-	display.setTextSize(1.5);
+	display.drawBitmap(0, 0, she, 16, 16, WHITE);
+	display.drawBitmap(18, 0, zhi, 16, 16, WHITE);
+	display.drawBitmap(36, 0, duo, 16, 16, WHITE);
+	display.drawBitmap(54, 0, jiu, 16, 16, WHITE);
+	display.drawBitmap(72, 0, hou, 16, 16, WHITE);
+	display.drawBitmap(90, 0, he, 16, 16, WHITE);
+	display.drawBitmap(108, 0, shui, 16, 16, WHITE);
+	display.drawBitmap(0, 18, chi, 16, 16, WHITE);
+	display.drawBitmap(18, 18, yao, 16, 16, WHITE);
+	display.setTextSize(2);
 	display.setTextColor(WHITE);
-	display.setCursor(0, 0);
-	display.print("RequireTime:");
+	display.setCursor(36, 18);
+	display.print(":");
 	display.print(TimeRequire);
+	display.drawBitmap(72, 18, miao, 16, 16, WHITE);
 	display.display();
 }
 //喝水吃药提示
 void RemainDrinkEat()
 {
-	Serial.println("REALYRemainDrinkEat");
+	// Serial.println("REALYRemainDrinkEat");
 	display.clearDisplay();
 	display.drawBitmap(0, 0, DrinkWater, 64, 64, 1);
 	display.drawBitmap(64, 0, Pills, 64, 64, 1);
@@ -426,16 +435,20 @@ void RemainDrinkEat()
 void showTimedifference()
 {
 	display.clearDisplay();
-	display.setTextSize(1.5);
+	display.drawBitmap(0, 0, dao, 16, 16, WHITE);
+	display.drawBitmap(18, 0, ji, 16, 16, WHITE);
+	display.drawBitmap(36, 0, shi, 16, 16, WHITE);
+	display.setTextSize(2);
 	display.setTextColor(WHITE);
-	display.setCursor(0, 0);
-	display.print("Timedifference:");
+	display.setCursor(54, 0);
+	display.print(":");
 	display.print(TimeRequire - TimeCounter);
+	display.drawBitmap(90, 0, miao, 16, 16, WHITE);
 	display.display();
 	//喝水吃药提示
 	if (TimeCounter >= TimeRequire)
 	{
-		Serial.println("RemainDrinkEat");
+		// Serial.println("RemainDrinkEat");
 		RemainDrinkEat();
 	}
 }
@@ -510,8 +523,8 @@ void Max30102Measure()
 			tone(Tonepin, 1000); //發出聲音
 			delay(10);
 			noTone(Tonepin); //停止聲音
-			Serial.print("beatAvg=");
-			Serial.println(beatAvg);		  //將心跳顯示到序列
+			// Serial.print("beatAvg=");
+			// Serial.println(beatAvg);		  //將心跳顯示到序列
 			long delta = millis() - lastBeat; //計算心跳差
 			lastBeat = millis();
 			beatsPerMinute = 60 / (delta / 1000.0); //計算平均心跳
@@ -551,8 +564,8 @@ void Max30102Measure()
 					ESpO2 = MINIMUM_SPO2; // indicator for finger detached
 				if (ESpO2 > 100)
 					ESpO2 = 99.9;
-				Serial.print("Oxygen % = ");
-				Serial.println(ESpO2);
+				// Serial.print("Oxygen % = ");
+				// Serial.println(ESpO2);
 				sumredrms = 0.0;
 				sumirrms = 0.0;
 				SpO2 = 0;
@@ -625,13 +638,13 @@ void setup()
 		while (1)
 			;
 	}
-	byte ledBrightness = 0xFF; //亮度Options: 0=Off to 255=50mA         0x7F
-	byte sampleAverage = 4;	   // Options: 1, 2, 4, 8, 16, 32            4
-	byte ledMode = 2;		   // Options: 1 = Red only(心跳), 2 = Red + IR(血氧)
+	byte ledBrightness = 0x7F; //亮度Options: 0=Off to 255=50mA         0x7F
+	byte sampleAverage = 4;	  // Options: 1, 2, 4, 8, 16, 32            4
+	byte ledMode = 2;		  // Options: 1 = Red only(心跳), 2 = Red + IR(血氧)        2
 	// Options: 1 = IR only, 2 = Red + IR on MH-ET LIVE MAX30102 board
-	int sampleRate = 1600; // Options: 50, 100, 200, 400, 800, 1000, 1600, 3200         800
-	int pulseWidth = 215;  // Options: 69, 118, 215, 411
-	int adcRange = 16384;  // Options: 2048, 4096, 8192, 16384
+	int sampleRate = 800; // Options: 50, 100, 200, 400, 800, 1000, 1600, 3200         800
+	int pulseWidth = 215; // Options: 69, 118, 215, 411        215
+	int adcRange = 16384; // Options: 2048, 4096, 8192, 16384
 
 	// Set up the wanted parameters
 	particleSensor.setup(ledBrightness, sampleAverage, ledMode, sampleRate, pulseWidth, adcRange); // Configure sensor with these settings
@@ -639,10 +652,8 @@ void setup()
 	particleSensor.setPulseAmplitudeRed(0x0A); // Turn Red LED to low to indicate sensor is running  0x0A
 	particleSensor.setPulseAmplitudeGreen(0);  // Turn off Green LED
 
-	Serial.begin(115200);
-
 	timer = timerBegin(0, 80, true);
-	timerAttachInterrupt(timer, &TimerEvent, true);
+	timerAttachInterrupt(timer, &Timer1Event, true);
 	timerAlarmWrite(timer, 1000000, true); // 1s中断一次
 }
 
@@ -657,7 +668,7 @@ void loop()
 		getTime();
 		getWeather();
 		showTimeWeather();
-		delay(1000);
+		// delay(1000);
 		showicon();
 		break;
 	case 3:
@@ -678,5 +689,4 @@ void loop()
 		Max30102Measure();
 		break;
 	}
-	delay(1);
 }
