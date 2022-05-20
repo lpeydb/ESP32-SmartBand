@@ -9,20 +9,26 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <NTPClient.h>
+#include <Adafruit_MPU6050.h>
+#include <Adafruit_Sensor.h>
 #include "pic.h"
 MAX30105 particleSensor;
+Adafruit_MPU6050 mpu;
 //定义引脚
-#define Tonepin 4
+#define Tonepin 15
 #define Ledpin 23
-#define Buttonpin1 5
-#define Buttonpin2 19
+#define Buttonpin1 19
+#define Buttonpin2 4
+#define Buttonpin3 18
 //声光报警用变数
 bool Max30102WorkRight = 0;
 //切换事件用变数
-int EventSwitch = 1;
+bool confirm = 0;
+bool menu = 1;
+int eventSwitch = 1;
 //計算心跳用變數
 const byte RATE_SIZE = 10; //多少平均數量     10
-byte rates[RATE_SIZE];	  //心跳陣列
+byte rates[RATE_SIZE];	   //心跳陣列
 byte rateSpot = 0;
 long lastBeat = 0; // Time at which the last beat occurred
 float beatsPerMinute;
@@ -42,10 +48,12 @@ int Num = 30;			  //取樣100次才計算1次
 #define MINIMUM_SPO2 90.0 //血氧最小量
 //定时器中断用变数
 int TimeCounter = 0;
-int TimeRequire = 1;
-int Time2Counter = 0;
 hw_timer_t *timer = NULL;
-hw_timer_t *timer2 = NULL;
+//秒表
+int stopWatchHour = 0;
+int stopWatchMinute = 0;
+int stopWatchSecon = 0;
+bool stopWatchWorking = 0;
 // oled初始化
 #define SCREEN_WIDTH 128												  // OLED寬度
 #define SCREEN_HEIGHT 64												  // OLED高度
@@ -66,9 +74,17 @@ long follower = 0;															// 粉丝数
 DynamicJsonDocument doc(1024);
 int currentHour;
 int currentMinute;
+int setHour = -1;
+int setMinute = -1;
 int weekDay;
 int monthDay;
 int currentMonth;
+// MPU6050用变数
+#define accLenth 8
+float acc_X[accLenth];
+float acc_Y[accLenth];
+float acc_Z[accLenth];
+int step = 0;
 //连接WiFi
 void WiFi_Connect()
 {
@@ -80,7 +96,7 @@ void WiFi_Connect()
 	}
 }
 //	获取粉丝数
-void getBiliBiliFollowers()
+void GetBiliBiliFollowers()
 {
 	HTTPClient http;
 	http.begin(followerUrl); // HTTP begin
@@ -110,19 +126,9 @@ void getBiliBiliFollowers()
 
 	http.end();
 }
-//显示粉丝数
-void showBilibiliFollower()
-{
-	display.clearDisplay();
-	display.drawBitmap(0, 0, bilibili, 64, 64, 1);
-	display.setTextSize(2);
-	display.setTextColor(WHITE);
-	display.setCursor(84, 24);
-	display.print(follower);
-	display.display();
-}
+void RemainDrinkEat();
 //获取时间
-void getTime()
+void GetTime()
 {
 	timeClient.update();
 	// Serial.println(timeClient.getFormattedTime());
@@ -148,6 +154,10 @@ void getTime()
 	// Serial.print("Month: ");
 	// Serial.println(currentMonth);
 	delay(20);
+	if ((currentHour == setHour) && (currentMinute == setMinute))
+	{
+		RemainDrinkEat();
+	}
 }
 // 选择天气图标
 void selectIcon(int i)
@@ -218,7 +228,7 @@ void selectIcon(int i)
 	}
 }
 //获取天气
-void getWeather()
+void GetWeather()
 {
 	HTTPClient http;
 	http.begin(weatherUrl); // HTTP begin
@@ -260,7 +270,7 @@ void getWeather()
 	delay(20);
 }
 //显示时间和天气
-void showTimeWeather()
+void ShowTimeWeather()
 {
 	display.clearDisplay();
 	display.setTextSize(4);
@@ -315,10 +325,10 @@ void showTimeWeather()
 	display.print(temperature);
 	display.display();
 	delay(1000);
-	// Serial.println("showTimeWeather End");
+	// Serial.println("ShowTimeWeather End");
 }
 //显示天气GIF
-void showicon()
+void ShowIcon()
 {
 	switch (icon)
 	{
@@ -360,58 +370,40 @@ void showicon()
 //定时器中断事件
 void IRAM_ATTR Timer1Event()
 {
-	TimeCounter++;
-	// Serial.print("TimeCounter:");
-	// Serial.println(TimeCounter);
-	//  Serial.print("TimeRequire:");
-	//  Serial.println(TimeRequire);
-}
-void IRAM_ATTR Timer2Event()
-{
-	Time2Counter++;
+	if (stopWatchSecon < 60)
+	{
+		stopWatchSecon++;
+	}
+	else
+	{
+		stopWatchSecon = 0;
+		if (stopWatchMinute < 60)
+		{
+			stopWatchMinute++;
+		}
+		else
+		{
+			stopWatchMinute = 0;
+			if (stopWatchHour < 60)
+			{
+				stopWatchHour++;
+			}
+		}
+	}
 }
 //按键1中断事件
 void Button1IntEvent()
 {
-	if (EventSwitch < 5)
-	{
-		EventSwitch++;
-	}
-	else
-	{
-		EventSwitch = 1;
-	}
-	Serial.print("EventSwitch=");
-	Serial.println(EventSwitch);
+	menu = 1;
+	Serial.println("Button1Int");
 }
-//按键2中断事件
-void Button2IntEvent()
+//按键3中断事件
+void Button3IntEvent()
 {
-	if (EventSwitch == 4)
+	if (menu == 1)
 	{
-		TimeRequire++;
+		confirm = 1;
 	}
-}
-//显示需求时间
-void showRequireTime()
-{
-	display.clearDisplay();
-	display.drawBitmap(0, 0, she, 16, 16, WHITE);
-	display.drawBitmap(18, 0, zhi, 16, 16, WHITE);
-	display.drawBitmap(36, 0, duo, 16, 16, WHITE);
-	display.drawBitmap(54, 0, jiu, 16, 16, WHITE);
-	display.drawBitmap(72, 0, hou, 16, 16, WHITE);
-	display.drawBitmap(90, 0, he, 16, 16, WHITE);
-	display.drawBitmap(108, 0, shui, 16, 16, WHITE);
-	display.drawBitmap(0, 18, chi, 16, 16, WHITE);
-	display.drawBitmap(18, 18, yao, 16, 16, WHITE);
-	display.setTextSize(2);
-	display.setTextColor(WHITE);
-	display.setCursor(36, 18);
-	display.print(":");
-	display.print(TimeRequire);
-	display.drawBitmap(72, 18, miao, 16, 16, WHITE);
-	display.display();
 }
 //喝水吃药提示
 void RemainDrinkEat()
@@ -422,34 +414,72 @@ void RemainDrinkEat()
 	display.drawBitmap(64, 0, Pills, 64, 64, 1);
 	display.display();
 	digitalWrite(Ledpin, 1);
+	tone(Tonepin, 349);
 	delay(4000);
 	display.clearDisplay();
 	display.display();
 	digitalWrite(Ledpin, 0);
-	TimeCounter = 0;
-	TimeRequire = 1;
-	timerAlarmDisable(timer); // close Timer
-	EventSwitch = 1;
+	noTone(Tonepin);
+	setHour = -1;
+	setMinute = -1;
 }
-//显示时间差
-void showTimedifference()
+//显示闹钟
+void RequireTime()
 {
-	display.clearDisplay();
-	display.drawBitmap(0, 0, dao, 16, 16, WHITE);
-	display.drawBitmap(18, 0, ji, 16, 16, WHITE);
-	display.drawBitmap(36, 0, shi, 16, 16, WHITE);
-	display.setTextSize(2);
-	display.setTextColor(WHITE);
-	display.setCursor(54, 0);
-	display.print(":");
-	display.print(TimeRequire - TimeCounter);
-	display.drawBitmap(90, 0, miao, 16, 16, WHITE);
-	display.display();
-	//喝水吃药提示
-	if (TimeCounter >= TimeRequire)
+	GetTime();
+	int Hour = currentHour;
+	int Minute = currentMinute;
+	while (1)
 	{
-		// Serial.println("RemainDrinkEat");
-		RemainDrinkEat();
+		display.clearDisplay();
+		display.drawBitmap(0, 0, he, 16, 16, WHITE);
+		display.drawBitmap(18, 0, shui, 16, 16, WHITE);
+		display.drawBitmap(36, 0, chi, 16, 16, WHITE);
+		display.drawBitmap(54, 0, yao, 16, 16, WHITE);
+		display.setTextSize(2);
+		display.setTextColor(WHITE);
+		display.setCursor(0, 18);
+		if (Hour < 10)
+		{
+			display.print("0"); //给小时数补零
+		}
+		display.print(Hour);
+		display.print(":");
+		if (Minute < 10)
+		{
+			display.print("0"); //给分钟数补零
+		}
+		display.print(Minute);
+		display.display();
+		if (digitalRead(Buttonpin2) == 0)
+		{
+			delay(30);
+			if (digitalRead(Buttonpin2) == 0)
+			{
+				Minute++;
+				if (Minute >= 60)
+				{
+					Hour++;
+					Minute = 0;
+				}
+				delay(20);
+			}
+		}
+		if (digitalRead(Buttonpin3) == 0)
+		{
+			delay(30);
+			if (digitalRead(Buttonpin3) == 0)
+			{
+				setHour = Hour;
+				setMinute = Minute;
+				menu = 1;
+				break;
+			}
+		}
+		if (menu == 1)
+		{
+			break;
+		}
 	}
 }
 //声光警报
@@ -609,6 +639,202 @@ void Max30102Measure()
 		noTone(Tonepin);
 	}
 }
+//秒表
+void StopWatch()
+{
+	delay(100);
+	display.clearDisplay();
+	display.setTextSize(2);
+	display.setTextColor(WHITE);
+	display.setCursor(0, 0);
+	if (stopWatchHour < 10)
+	{
+		display.print("0"); //给小时数补零
+	}
+	display.print(stopWatchHour);
+	display.print(":");
+	if (stopWatchMinute < 10)
+	{
+		display.print("0"); //给小时数补零
+	}
+	display.print(stopWatchMinute);
+	display.print(":");
+	if (stopWatchSecon < 10)
+	{
+		display.print("0"); //给小时数补零
+	}
+	display.print(stopWatchSecon);
+	display.display();
+	if (digitalRead(Buttonpin3) == 0)
+	{
+		delay(30);
+		if (digitalRead(Buttonpin3) == 0)
+		{
+			stopWatchWorking = !stopWatchWorking;
+			if (stopWatchWorking == 1)
+			{
+				timerAlarmEnable(timer); //	使能定时器
+			}
+			else
+			{
+				timerAlarmDisable(timer);
+			}
+		}
+	}
+	if (menu == 1)
+	{
+		timerAlarmDisable(timer);
+		stopWatchHour = 0;
+		stopWatchMinute = 0;
+		stopWatchSecon = 0;
+	}
+}
+void StepCount()
+{
+	display.clearDisplay();
+	display.setTextSize(3);
+	display.setTextColor(WHITE);
+	display.setCursor(0, 0);
+	display.print("Step:");
+	display.print(step);
+	display.display();
+	if (mpu.getMotionInterruptStatus())
+	{
+		/* Get new sensor events with the readings */
+		sensors_event_t a, g, temp;
+		mpu.getEvent(&a, &g, &temp);
+
+		/* Print out the values */
+		Serial.print("AccelX:");
+		Serial.print(a.acceleration.x);
+		Serial.print(",");
+		Serial.print("AccelY:");
+		Serial.print(a.acceleration.y);
+		Serial.print(",");
+		Serial.print("AccelZ:");
+		Serial.println(a.acceleration.z);
+		for (int i = accLenth - 1; i > 0; i--) //不断把新数据塞入数组
+		{
+			acc_X[i] = acc_X[i - 1];
+			acc_Y[i] = acc_Y[i - 1];
+			acc_Z[i] = acc_Z[i - 1];
+		}
+		acc_X[0] = a.acceleration.x;
+		acc_Y[0] = a.acceleration.y;
+		acc_Z[0] = a.acceleration.z;
+		if ((acc_X[accLenth - 1] != 0.00))
+		{
+			for (int i = 0; i < accLenth; i++)
+			{
+				if ((fabs(a.acceleration.x - acc_X[i]) > 6.00) || (fabs(a.acceleration.y - acc_Y[i]) > 6.00) || (fabs(a.acceleration.z - acc_Z[i]) > 6.00))
+				{
+					for (int i = 0; i < accLenth; i++)
+					{
+						acc_X[i] = a.acceleration.x;
+						acc_Y[i] = a.acceleration.y;
+						acc_Z[i] = a.acceleration.z;
+					}
+					step++;
+					Serial.print("step:");
+					Serial.println(step);
+					delay(400);
+				}
+			}
+		}
+	}
+	delay(10);
+}
+//菜单
+void Menu()
+{
+	display.clearDisplay();
+	switch (eventSwitch)
+	{
+	case 1:
+		display.drawBitmap(39, 7, pulseIcon, 50, 50, 1);
+		break;
+
+	case 2:
+		display.drawBitmap(39, 7, timeIcon, 50, 50, 1);
+		break;
+	case 3:
+		display.drawBitmap(32, 0, bilibiliIcon, 64, 64, 1);
+		break;
+	case 4:
+		display.drawBitmap(39, 7, alarmClockIcon, 50, 50, 1);
+		break;
+	case 5:
+		display.drawBitmap(39, 7, stopWatchIcon, 50, 50, 1);
+		break;
+	case 6:
+		display.drawBitmap(32, 0, stepIcon, 64, 64, 1);
+		break;
+	default:
+		break;
+	}
+	display.display();
+	// Serial.print(digitalRead(Buttonpin2));
+	if (digitalRead(Buttonpin2) == 0)
+	{
+		delay(50);
+		if (digitalRead(Buttonpin2) == 0)
+		{
+
+			// Serial.print("Buttonpin2=");
+			// Serial.println(Buttonpin2);
+
+			if (eventSwitch < 6)
+			{
+				eventSwitch++;
+			}
+			else
+			{
+				eventSwitch = 1;
+			}
+			Serial.print("eventSwitch=");
+			Serial.println(eventSwitch);
+			delay(20);
+		}
+	}
+	if (confirm == 1)
+	{
+		menu = 0;
+		confirm = 0;
+	}
+}
+//事件切换
+void SelectEventSwitch()
+{
+	switch (eventSwitch)
+	{
+	case 1:
+		Max30102Measure();
+		break;
+	case 2:
+		GetTime();
+		GetWeather();
+		ShowTimeWeather();
+		delay(2000);
+		ShowIcon();
+		break;
+	case 3:
+		GetBiliBiliFollowers();
+		ShowBilibiliFollower();
+		break;
+	case 4:
+		RequireTime();
+		break;
+	case 5:
+		StopWatch();
+		break;
+	case 6:
+		StepCount();
+		break;
+	default:
+		Max30102Measure();
+		break;
+	}
+}
 void setup()
 {
 	display.begin(SSD1306_SWITCHCAPVCC, 0x3C); // Start the OLED display
@@ -621,26 +847,43 @@ void setup()
 	WiFi_Connect();
 	timeClient.begin();
 	timeClient.setTimeOffset(28800); // + 1区 偏移3600， +8区 ：3600×8 = 28800
+	// GetTime();
 	Serial.println("WiFi connected");
 	Serial.println("IP address: ");
 	Serial.println(WiFi.localIP());
 
 	pinMode(Ledpin, OUTPUT);
-	//按键中断
 	pinMode(Buttonpin1, INPUT_PULLUP);
-	attachInterrupt(Buttonpin1, Button1IntEvent, FALLING);
 	pinMode(Buttonpin2, INPUT_PULLUP);
-	attachInterrupt(Buttonpin2, Button2IntEvent, FALLING);
-
+	pinMode(Buttonpin3, INPUT_PULLUP);
+	attachInterrupt(Buttonpin1, Button1IntEvent, FALLING);
+	attachInterrupt(Buttonpin3, Button3IntEvent, FALLING);
+	// Try to initialize!
 	if (!particleSensor.begin(Wire, I2C_SPEED_FAST)) // Use default I2C port, 400kHz speed
 	{
 		Serial.println("找不到MAX30102");
 		while (1)
 			;
 	}
+	if (!mpu.begin())
+	{
+		Serial.println("Failed to find MPU6050 chip");
+		while (1)
+		{
+			delay(10);
+		}
+	}
+	// setupt motion detection
+	mpu.setHighPassFilter(MPU6050_HIGHPASS_0_63_HZ);
+	mpu.setMotionDetectionThreshold(1);
+	mpu.setMotionDetectionDuration(20);
+	mpu.setInterruptPinLatch(true); // Keep it latched.  Will turn off when reinitialized.
+	mpu.setInterruptPinPolarity(true);
+	mpu.setMotionInterrupt(true);
+
 	byte ledBrightness = 0x7F; //亮度Options: 0=Off to 255=50mA         0x7F
-	byte sampleAverage = 4;	  // Options: 1, 2, 4, 8, 16, 32            4
-	byte ledMode = 2;		  // Options: 1 = Red only(心跳), 2 = Red + IR(血氧)        2
+	byte sampleAverage = 4;	   // Options: 1, 2, 4, 8, 16, 32            4
+	byte ledMode = 2;		   // Options: 1 = Red only(心跳), 2 = Red + IR(血氧)        2
 	// Options: 1 = IR only, 2 = Red + IR on MH-ET LIVE MAX30102 board
 	int sampleRate = 800; // Options: 50, 100, 200, 400, 800, 1000, 1600, 3200         800
 	int pulseWidth = 215; // Options: 69, 118, 215, 411        215
@@ -655,38 +898,19 @@ void setup()
 	timer = timerBegin(0, 80, true);
 	timerAttachInterrupt(timer, &Timer1Event, true);
 	timerAlarmWrite(timer, 1000000, true); // 1s中断一次
+
+	showCool();
+	showCool();
 }
 
 void loop()
 {
-	switch (EventSwitch)
+	if (menu == 1)
 	{
-	case 1:
-		Max30102Measure();
-		break;
-	case 2:
-		getTime();
-		getWeather();
-		showTimeWeather();
-		// delay(1000);
-		showicon();
-		break;
-	case 3:
-		getBiliBiliFollowers();
-		showBilibiliFollower();
-		break;
-	case 4:
-		showRequireTime();
-		break;
-	case 5:
-		if (TimeRequire != 1)
-		{
-			timerAlarmEnable(timer); //	使能定时器
-		}
-		showTimedifference();
-		break;
-	default:
-		Max30102Measure();
-		break;
+		Menu();
+	}
+	else
+	{
+		SelectEventSwitch();
 	}
 }

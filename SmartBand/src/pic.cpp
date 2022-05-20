@@ -1,5 +1,6 @@
 #include "pic.h"
 extern Adafruit_SSD1306 display;
+extern long follower;
 int xx = 40;
 int yy = 10;
 // int tt = 40;
@@ -1507,6 +1508,390 @@ void showWindy()
 
     display.clearDisplay();
     display.drawBitmap(xx, yy, Windy27, 48, 48, 1);
+    display.display();
+    delay(50);
+}
+void showCool()
+{
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, gool1, 48, 48, 1);
+    display.display();
+    delay(40);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, gool2, 48, 48, 1);
+    display.display();
+    delay(50);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, gool3, 48, 48, 1);
+    display.display();
+    delay(40);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, gool4, 48, 48, 1);
+    display.display();
+    delay(40);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, gool5, 48, 48, 1);
+    display.display();
+    delay(40);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, gool6, 48, 48, 1);
+    display.display();
+    delay(40);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, gool7, 48, 48, 1);
+    display.display();
+    delay(40);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, gool8, 48, 48, 1);
+    display.display();
+    delay(50);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, gool9, 48, 48, 1);
+    display.display();
+    delay(40);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, gool10, 48, 48, 1);
+    display.display();
+    delay(40);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, gool11, 48, 48, 1);
+    display.display();
+    delay(40);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, gool12, 48, 48, 1);
+    display.display();
+    delay(40);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, gool13, 48, 48, 1);
+    display.display();
+    delay(40);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, gool14, 48, 48, 1);
+    display.display();
+    delay(50);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, gool15, 48, 48, 1);
+    display.display();
+    delay(40);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, gool16, 48, 48, 1);
+    display.display();
+    delay(40);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, gool17, 48, 48, 1);
+    display.display();
+    delay(40);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, gool18, 48, 48, 1);
+    display.display();
+    delay(40);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, gool19, 48, 48, 1);
+    display.display();
+    delay(40);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, gool20, 48, 48, 1);
+    display.display();
+    delay(50);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, gool21, 48, 48, 1);
+    display.display();
+    delay(40);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, gool22, 48, 48, 1);
+    display.display();
+    delay(40);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, gool23, 48, 48, 1);
+    display.display();
+    delay(40);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, gool24, 48, 48, 1);
+    display.display();
+    delay(40);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, gool25, 48, 48, 1);
+    display.display();
+    delay(40);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, gool26, 48, 48, 1);
+    display.display();
+    delay(50);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, gool27, 48, 48, 1);
+    display.display();
+    delay(50);
+}
+void ShowBilibiliFollower()
+{
+    int xx = 6;
+    int yy = 3;
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, thumbUp1, 48, 48, 1);
+    display.setTextSize(2);
+    display.setTextColor(WHITE);
+    display.setCursor(84, 24);
+    display.print(follower);
+    display.display();
+    delay(40);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, thumbUp2, 48, 48, 1);
+    display.setTextSize(2);
+    display.setTextColor(WHITE);
+    display.setCursor(84, 24);
+    display.print(follower);
+    display.display();
+    delay(50);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, thumbUp3, 48, 48, 1);
+    display.setTextSize(2);
+    display.setTextColor(WHITE);
+    display.setCursor(84, 24);
+    display.print(follower);
+    display.display();
+    delay(40);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, thumbUp4, 48, 48, 1);
+    display.setTextSize(2);
+    display.setTextColor(WHITE);
+    display.setCursor(84, 24);
+    display.print(follower);
+    display.display();
+    delay(40);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, thumbUp5, 48, 48, 1);
+    display.setTextSize(2);
+    display.setTextColor(WHITE);
+    display.setCursor(84, 24);
+    display.print(follower);
+    display.display();
+    delay(40);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, thumbUp6, 48, 48, 1);
+    display.setTextSize(2);
+    display.setTextColor(WHITE);
+    display.setCursor(84, 24);
+    display.print(follower);
+    display.display();
+    delay(40);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, thumbUp7, 48, 48, 1);
+    display.setTextSize(2);
+    display.setTextColor(WHITE);
+    display.setCursor(84, 24);
+    display.print(follower);
+    display.display();
+    delay(40);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, thumbUp8, 48, 48, 1);
+    display.setTextSize(2);
+    display.setTextColor(WHITE);
+    display.setCursor(84, 24);
+    display.print(follower);
+    display.display();
+    delay(50);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, thumbUp9, 48, 48, 1);
+    display.setTextSize(2);
+    display.setTextColor(WHITE);
+    display.setCursor(84, 24);
+    display.print(follower);
+    display.display();
+    delay(40);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, thumbUp10, 48, 48, 1);
+    display.setTextSize(2);
+    display.setTextColor(WHITE);
+    display.setCursor(84, 24);
+    display.print(follower);
+    display.display();
+    delay(40);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, thumbUp11, 48, 48, 1);
+    display.setTextSize(2);
+    display.setTextColor(WHITE);
+    display.setCursor(84, 24);
+    display.print(follower);
+    display.display();
+    delay(40);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, thumbUp12, 48, 48, 1);
+    display.setTextSize(2);
+    display.setTextColor(WHITE);
+    display.setCursor(84, 24);
+    display.print(follower);
+    display.display();
+    delay(40);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, thumbUp13, 48, 48, 1);
+    display.setTextSize(2);
+    display.setTextColor(WHITE);
+    display.setCursor(84, 24);
+    display.print(follower);
+    display.display();
+    delay(40);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, thumbUp14, 48, 48, 1);
+    display.setTextSize(2);
+    display.setTextColor(WHITE);
+    display.setCursor(84, 24);
+    display.print(follower);
+    display.display();
+    delay(50);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, thumbUp15, 48, 48, 1);
+    display.setTextSize(2);
+    display.setTextColor(WHITE);
+    display.setCursor(84, 24);
+    display.print(follower);
+    display.display();
+    delay(40);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, thumbUp16, 48, 48, 1);
+    display.setTextSize(2);
+    display.setTextColor(WHITE);
+    display.setCursor(84, 24);
+    display.print(follower);
+    display.display();
+    delay(40);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, thumbUp17, 48, 48, 1);
+    display.setTextSize(2);
+    display.setTextColor(WHITE);
+    display.setCursor(84, 24);
+    display.print(follower);
+    display.display();
+    delay(40);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, thumbUp18, 48, 48, 1);
+    display.setTextSize(2);
+    display.setTextColor(WHITE);
+    display.setCursor(84, 24);
+    display.print(follower);
+    display.display();
+    delay(40);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, thumbUp19, 48, 48, 1);
+    display.setTextSize(2);
+    display.setTextColor(WHITE);
+    display.setCursor(84, 24);
+    display.print(follower);
+    display.display();
+    delay(40);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, thumbUp20, 48, 48, 1);
+    display.setTextSize(2);
+    display.setTextColor(WHITE);
+    display.setCursor(84, 24);
+    display.print(follower);
+    display.display();
+    delay(50);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, thumbUp21, 48, 48, 1);
+    display.setTextSize(2);
+    display.setTextColor(WHITE);
+    display.setCursor(84, 24);
+    display.print(follower);
+    display.display();
+    delay(40);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, thumbUp22, 48, 48, 1);
+    display.setTextSize(2);
+    display.setTextColor(WHITE);
+    display.setCursor(84, 24);
+    display.print(follower);
+    display.display();
+    delay(40);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, thumbUp23, 48, 48, 1);
+    display.setTextSize(2);
+    display.setTextColor(WHITE);
+    display.setCursor(84, 24);
+    display.print(follower);
+    display.display();
+    delay(40);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, thumbUp24, 48, 48, 1);
+    display.setTextSize(2);
+    display.setTextColor(WHITE);
+    display.setCursor(84, 24);
+    display.print(follower);
+    display.display();
+    delay(40);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, thumbUp25, 48, 48, 1);
+    display.setTextSize(2);
+    display.setTextColor(WHITE);
+    display.setCursor(84, 24);
+    display.print(follower);
+    display.display();
+    delay(40);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, thumbUp26, 48, 48, 1);
+    display.setTextSize(2);
+    display.setTextColor(WHITE);
+    display.setCursor(84, 24);
+    display.print(follower);
+    display.display();
+    delay(50);
+
+    display.clearDisplay();
+    display.drawBitmap(xx, yy, thumbUp27, 48, 48, 1);
+    display.setTextSize(2);
+    display.setTextColor(WHITE);
+    display.setCursor(84, 24);
+    display.print(follower);
     display.display();
     delay(50);
 }
