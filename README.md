@@ -6,7 +6,7 @@
 
 ## 演示视频
 
-B站指路：https://www.bilibili.com/video/BV1it4y1s7AY?spm_id_from=333.999.0.0
+[B站视频](https://www.bilibili.com/video/BV1it4y1s7AY?spm_id_from=333.999.0.0)
 
 ## 关于取模
 
