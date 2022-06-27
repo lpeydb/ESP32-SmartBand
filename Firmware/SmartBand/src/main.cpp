@@ -29,6 +29,7 @@ bool Max30102WorkRight = 0;
 bool confirm = 0;
 bool menu = 1;
 int eventSwitch = 1;
+bool button2Press = 0;
 //計算心跳用變數
 const byte RATE_SIZE = 10; //多少平均數量     10
 byte rates[RATE_SIZE];	   //心跳陣列
@@ -84,7 +85,7 @@ int weekDay;
 bool counts = 0; //获取时间变量
 // 计步器用变数
 int step = 0;
-float thresholdValue = 5; //计步阈值
+float thresholdValue = 3; //计步阈值
 bool stepDown = false;   //用于检测方向，当加速度大于正阈值为0，小于负阈值为1
 //连接WiFi
 void WiFi_Connect()
@@ -400,49 +401,16 @@ void IRAM_ATTR Timer2Event()
 void Button1IntEvent()
 {
 	menu = 1;
-	Serial.println("Button1Int");
+	//Serial.println("Button1Int");
+}
+void Button2IntEvent()
+{
+	button2Press = 1;
+	Serial.println("Button2Int");
 }
 void Button3IntEvent()
 {
-	if (menu)
-	{
-		confirm = 1;
-	}
-}
-//检测按钮是否按下
-bool IfButton2Press()
-{
-	bool BottonState = 0;
-	if (digitalRead(Buttonpin2) == 0)
-	{
-		delay(5);
-		while (digitalRead(Buttonpin2) == 0)
-		{
-			if (digitalRead(Buttonpin2) == 1)
-			{
-				BottonState = 1;
-				break;
-			}
-		}
-	}
-	return BottonState;
-}
-bool IfButton3Press()
-{
-	bool BottonState = 0;
-	if (digitalRead(Buttonpin3) == 0)
-	{
-		delay(5);
-		while (digitalRead(Buttonpin3) == 0)
-		{
-			if (digitalRead(Buttonpin3) == 1)
-			{
-				BottonState = 1;
-				break;
-			}
-		}
-	}
-	return BottonState;
+	confirm = 1;
 }
 //喝水吃药提示
 void RemainDrinkEat()
@@ -490,7 +458,7 @@ void Alarm()
 		}
 		display.print(Minute);
 		display.display();
-		if (IfButton2Press())
+		if (button2Press)
 		{
 			Minute++;
 			if (Minute >= 60)
@@ -498,16 +466,19 @@ void Alarm()
 				Hour++;
 				Minute = 0;
 			}
+			delay(200);
+			button2Press = 0;
 		}
-		if (IfButton3Press()) //判断是否有设置时间（不能设置和当前时间一模一样）
+		if (confirm) 
 		{
-			if ((Hour > currentHour) || (Minute > currentMinute))
+			if ((Hour > currentHour) || (Minute > currentMinute))    //判断是否有设置时间（不能设置和当前时间一模一样）
 			{
 				setHour = Hour;
 				setMinute = Minute;
 			}
 			menu = 1;
 			delay(200);
+			confirm = 0;
 			break;
 		}
 		if (menu)
@@ -698,8 +669,10 @@ void StopWatch()
 	}
 	display.print(stopWatchSecon);
 	display.display();
-	if (IfButton3Press())
+	if (confirm)
 	{
+		delay(200);
+		confirm = 0;
 		stopWatchWorking = !stopWatchWorking;
 		if (stopWatchWorking)
 		{
@@ -785,9 +758,10 @@ void Menu()
 	default:
 		break;
 	}
+	Serial.print("eventSwitch=");
+	Serial.println(eventSwitch);
 	display.display();
-	// Serial.print(digitalRead(Buttonpin2));
-	if (IfButton2Press())
+	if (button2Press)
 	{
 		if (eventSwitch < 6)
 		{
@@ -797,6 +771,8 @@ void Menu()
 		{
 			eventSwitch = 1;
 		}
+		delay(200);
+		button2Press = 0;
 	}
 	if (confirm)
 	{
@@ -858,6 +834,7 @@ void setup()
 	pinMode(Buttonpin2, INPUT_PULLUP);
 	pinMode(Buttonpin3, INPUT_PULLUP);
 	attachInterrupt(Buttonpin1, Button1IntEvent, FALLING);
+	attachInterrupt(Buttonpin2, Button2IntEvent, FALLING);
 	attachInterrupt(Buttonpin3, Button3IntEvent, FALLING);
 	// Try to initialize!
 	if (!particleSensor.begin(Wire, I2C_SPEED_FAST)) // Use default I2C port, 400kHz speed
