@@ -15,7 +15,7 @@
 MAX30105 particleSensor;
 Adafruit_MPU6050 mpu;
 //定义引脚
-#define Tonepin 4
+#define Tonepin 2
 #define Ledpin 23
 #define Buttonpin1 5  
 #define Buttonpin2 18 
@@ -81,7 +81,7 @@ int currentMinute;
 int monthDay;
 int month;
 int weekDay;
-bool counts = 0; //几秒获取一次时间
+bool counts = 0; //获取时间变量
 // 计步器用变数
 int step = 0;
 float thresholdValue = 5; //计步阈值
@@ -415,7 +415,7 @@ bool IfButton2Press()
 	bool BottonState = 0;
 	if (digitalRead(Buttonpin2) == 0)
 	{
-		delay(20);
+		delay(5);
 		while (digitalRead(Buttonpin2) == 0)
 		{
 			if (digitalRead(Buttonpin2) == 1)
@@ -432,7 +432,7 @@ bool IfButton3Press()
 	bool BottonState = 0;
 	if (digitalRead(Buttonpin3) == 0)
 	{
-		delay(20);
+		delay(5);
 		while (digitalRead(Buttonpin3) == 0)
 		{
 			if (digitalRead(Buttonpin3) == 1)
@@ -798,7 +798,7 @@ void Menu()
 			eventSwitch = 1;
 		}
 	}
-	if (confirm == 1)
+	if (confirm)
 	{
 		menu = 0;
 		confirm = 0;
