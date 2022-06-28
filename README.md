@@ -1,7 +1,11 @@
 # ESP32-SmartBand
 > 这是大学三年级的实训项目。
 >
+## PCB效果
+
+![](Hardware/PCB.jpg)
 ## 连线
+
 ![](Hardware/Connection.png)
 
 ## 演示视频

@@ -17,9 +17,9 @@ Adafruit_MPU6050 mpu;
 //定义引脚
 #define Tonepin 2
 #define Ledpin 23
-#define Buttonpin1 5
-#define Buttonpin2 18
-#define Buttonpin3 19
+#define Buttonpin1 5  
+#define Buttonpin2 18 
+#define Buttonpin3 19 
 //提醒吃药喝水用变数
 int setHour = -1;
 int setMinute = -1;
@@ -86,7 +86,7 @@ bool counts = 0; //获取时间变量
 // 计步器用变数
 int step = 0;
 float thresholdValue = 3; //计步阈值
-bool stepDown = false;	  //用于检测方向，当加速度大于正阈值为0，小于负阈值为1
+bool stepDown = false;   //用于检测方向，当加速度大于正阈值为0，小于负阈值为1
 //连接WiFi
 void WiFi_Connect()
 {
@@ -401,7 +401,7 @@ void IRAM_ATTR Timer2Event()
 void Button1IntEvent()
 {
 	menu = 1;
-	// Serial.println("Button1Int");
+	//Serial.println("Button1Int");
 }
 void Button2IntEvent()
 {
@@ -433,8 +433,11 @@ void RemainDrinkEat()
 //显示闹钟
 void Alarm()
 {
+	GetTime();
 	int Hour = currentHour;
 	int Minute = currentMinute;
+	while (1)
+	{
 		display.clearDisplay();
 		display.drawBitmap(0, 0, he, 16, 16, WHITE);
 		display.drawBitmap(18, 0, shui, 16, 16, WHITE);
@@ -463,14 +466,10 @@ void Alarm()
 				Hour++;
 				Minute = 0;
 			}
-			delay(200);2
+			delay(200);
 			button2Press = 0;
 		}
-	if (confirm)232
 		if (confirm) 
-	if (confirm)
-		if (confirm) 
-	if (confirm)
 		{
 			if ((Hour > currentHour) || (Minute > currentMinute))    //判断是否有设置时间（不能设置和当前时间一模一样）
 			{
@@ -480,6 +479,12 @@ void Alarm()
 			menu = 1;
 			delay(200);
 			confirm = 0;
+			break;
+		}
+		if (menu)
+		{
+			break;
+		}
 	}
 }
 //声光警报
@@ -713,14 +718,14 @@ void pedometer()
 		Serial.print(",");
 		Serial.print("AccelZ:");
 		Serial.println(a.acceleration.z);
-		if ((a.acceleration.x < (-thresholdValue) || a.acceleration.y < (-thresholdValue)))
+		if ((a.acceleration.x< (-thresholdValue) || a.acceleration.y< (-thresholdValue)))
 		{
-			stepDown = 1;
+			stepDown=1;
 		}
-		if ((a.acceleration.x > thresholdValue || a.acceleration.y > thresholdValue) && stepDown)
+		if ((a.acceleration.x> thresholdValue || a.acceleration.y> thresholdValue) && stepDown) 
 		{
-			step += 2; //来回摆动算两步
-			stepDown = 0;
+			step+=2;    //来回摆动算两步
+			stepDown=0;
 			Serial.print("step:");
 			Serial.println(step);
 		}
