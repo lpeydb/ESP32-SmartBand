@@ -7,6 +7,16 @@
   当时还没学指针，不懂得可以通过指针传递地址给函数进行操作。
 
 + 几乎所有代码都塞在`main.cpp`文件里，代码可读性差。
+
+  ---
+
+  **以下是整改代码的版本，不确定能用，有需要的可以参考：**
+
+  https://github.com/lpeydb/ESP32-SmartBand/tree/good_format
+
+  ---
+
+  
 ## PCB效果
 ![](Hardware/PCB.jpg)
 ## 连线
