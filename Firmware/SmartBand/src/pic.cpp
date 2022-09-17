@@ -1,6 +1,6 @@
 #include "pic.h"
-extern Adafruit_SSD1306 display;
-extern long follower;
+
+int icon;
 int xx = 40;
 int yy = 10;
 // int tt = 40;
@@ -1894,4 +1894,170 @@ void ShowBilibiliFollower()
     display.print(follower);
     display.display();
     delay(50);
+}
+//显示时间和天气
+void ShowTimeWeather()
+{
+	display.clearDisplay();
+	display.setTextSize(4);
+	display.setTextColor(WHITE);
+	display.setCursor(0, 0);
+	if (currentHour < 10)
+	{
+		display.print("0"); //给小时数补零
+	}
+	display.print(currentHour);
+	display.print(":");
+	if (currentMinute < 10)
+	{
+		display.print("0"); //给分钟数补零
+	}
+	display.println(currentMinute);
+	display.setTextSize(1);
+	switch (weekDay)
+	{
+	case 1:
+		display.print("Monday");
+		break;
+	case 2:
+		display.print("Tuesday");
+		break;
+	case 3:
+		display.print("Wednesday");
+		break;
+	case 4:
+		display.print("Thursday");
+		break;
+	case 5:
+		display.print("Friday");
+		break;
+	case 6:
+		display.print("Saturday");
+		break;
+	case 0:
+		display.print("Sunday");
+		break;
+	default:
+		display.print("Unknown");
+		break;
+	}
+	display.print(" ");
+	display.print(month);
+	display.print("/");
+	display.println(monthDay);
+	display.println(location);
+	display.println(weather);
+	display.print("temperature:");
+	display.print(temperature);
+	display.display();
+	delay(1000);
+	// Serial.println("ShowTimeWeather End");
+}
+//显示天气GIF
+void ShowIcon()
+{
+	switch (icon)
+	{
+	case 1:
+		showSun();
+		break;
+	case 2:
+		showDayNight();
+		break;
+	case 3:
+		showCloudy();
+		break;
+	case 4:
+		showRainCloudy();
+		break;
+	case 5:
+		showtStormy();
+		break;
+	case 6:
+		showRainy();
+		break;
+	case 7:
+		showTorrentialRain();
+		break;
+	case 8:
+		showLightSnowy();
+		break;
+	case 9:
+		showHaze();
+		break;
+	case 10:
+		showWindy();
+		break;
+
+	default:
+		break;
+	}
+}
+// 选择天气图标
+void selectIcon(int i)
+{
+	switch (i)
+	{
+	case 0: // 白天晴天
+	case 2:
+		icon = 1;
+		break;
+
+	case 1: // 晚上晴天
+	case 3:
+		icon = 2;
+		break;
+
+	case 4: // 多云
+	case 5:
+	case 6:
+	case 7:
+	case 8:
+	case 9:
+		icon = 3;
+		break;
+
+	case 10: // 阵雨(太阳雨)
+		icon = 4;
+		break;
+
+	case 11: // 雷阵雨
+	case 12:
+		icon = 5;
+		break;
+
+	case 13: // 小雨
+		icon = 6;
+		break;
+
+	case 14: // 大到暴雨
+	case 15:
+	case 16:
+	case 17:
+	case 18:
+		icon = 7;
+		break;
+
+	case 20: // 雪
+	case 21:
+	case 22:
+	case 23:
+	case 24:
+	case 25:
+		icon = 8;
+		break;
+
+	case 31: // 霾
+		icon = 9;
+		break;
+
+	case 32: // 风
+	case 33:
+		icon = 10;
+		break;
+
+	default:
+		icon = 11;
+		break;
+	}
 }
